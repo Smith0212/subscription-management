@@ -2,11 +2,11 @@ const pool = require('../../../../config/database');
 const common = require('../../../../utilities/common');
 const responseCode = require('../../../../utilities/response_code');
 const response_message = require('../../../../language/en');
+const templates = require("../../../../utilities/email_templates")
 const md5 = require('md5');
 const jwt = require('jsonwebtoken');
 
 class user_model {
-
 
     signup(req, res) {
         console.log("Request Body model:", req.body);
@@ -548,25 +548,28 @@ class user_model {
         })
     }
 
-    subscribeToBox(req, res) {
-        const user_id = req.user.id;
-        const { plan_id, payment_method, address } = req.body;
+    // Enhanced subscribeToBox method with retry logic
 
+    subscribeToBox(req, res) {
+        const user_id = req.user.id
+        const { plan_id, payment_method, address, payment_intent_id } = req.body
+
+        // First check if plan exists
         const planQuery = `
-                select sp.* 
-                from tbl_subscription_plans sp
-                join tbl_subscription_boxes sb on sp.box_id = sb.id
-                where sp.id = ? and sp.is_deleted = 0 and sp.is_active = 1
-            `;
+        SELECT sp.*, sb.name as box_name 
+        FROM tbl_subscription_plans sp
+        JOIN tbl_subscription_boxes sb ON sp.box_id = sb.id
+        WHERE sp.id = ? AND sp.is_deleted = 0 AND sp.is_active = 1
+    `
 
         pool.query(planQuery, [plan_id], (error, result) => {
             if (error) {
-                console.error("Database Query Error:", error);
+                console.error("Database Query Error:", error)
                 return common.response(res, {
                     code: responseCode.OPERATION_FAILED,
                     message: response_message.unsuccess,
                     data: error.sqlMessage,
-                });
+                })
             }
 
             if (result.length === 0) {
@@ -574,10 +577,10 @@ class user_model {
                     code: responseCode.OPERATION_FAILED,
                     message: response_message.subscription_plan_not_found,
                     data: null,
-                });
+                })
             }
 
-            const plan = result[0];
+            const plan = result[0]
 
             const subscriptionQuery = `
                     select * from tbl_user_subscription 
@@ -605,62 +608,258 @@ class user_model {
                     }
                 }
 
-                const end_date = new Date(start_date);
-                end_date.setMonth(end_date.getMonth() + plan.months);
+                const end_date = new Date()
+                end_date.setMonth(end_date.getMonth() + plan.months)
 
-                const subscriptionData = {
-                    user_id,
-                    plan_id,
-                    status: "active",
-                    start_date,
-                    end_date,
-                    payment_method: payment_method || "cash",
-                };
+                // If payment_intent_id is provided, verify payment status with retry logic
+                if (payment_intent_id && payment_method === "card") {
+                    verifyPaymentWithRetry(payment_intent_id, 3, 1000) // 3 attempts, 1 second delay
+                } else if (payment_method === "cash") {
+                    createSubscription()
+                } else {
+                    return common.response(res, {
+                        code: responseCode.OPERATION_FAILED,
+                        message: response_message.invalid_payment_method,
+                        data: null,
+                    })
+                }
 
-                pool.query("insert into tbl_user_subscription set ?", subscriptionData, (err, subscriptionResult) => {
-                    if (err) {
-                        console.error("Database Query Error:", err);
-                        return common.response(res, {
-                            code: responseCode.OPERATION_FAILED,
-                            message: response_message.unsuccess,
-                            data: err.sqlMessage,
-                        });
-                    }
+                function verifyPaymentWithRetry(paymentIntentId, attemptsLeft, delay) {
+                    pool.query(
+                        "SELECT * FROM tbl_payment_transaction WHERE payment_intent_id = ? AND status = ?",
+                        [paymentIntentId, "succeeded"],
+                        (err, paymentResult) => {
+                            console.log(`Payment verification attempt. Attempts left: ${attemptsLeft}`)
+                            console.log("Payment Result:", paymentResult)
 
-                    // const subscription_id = subscriptionResult.insertId;
+                            if (err) {
+                                console.error("Payment Verification Error:", err)
+                                return common.response(res, {
+                                    code: responseCode.OPERATION_FAILED,
+                                    message: response_message.payment_verification_failed,
+                                    data: err.sqlMessage,
+                                })
+                            }
 
-                    const orderData = {
+                            if (paymentResult.length > 0) {
+                                // Payment found and succeeded
+                                console.log("Payment verified successfully")
+                                createSubscription()
+                            } else if (attemptsLeft > 1) {
+                                // Payment not found, retry after delay
+                                console.log(`Payment not yet verified, retrying in ${delay}ms...`)
+                                setTimeout(() => {
+                                    verifyPaymentWithRetry(paymentIntentId, attemptsLeft - 1, delay * 1.5) // Exponential backoff
+                                }, delay)
+                            } else {
+                                // No more attempts left, check if payment exists but not succeeded
+                                pool.query(
+                                    "SELECT * FROM tbl_payment_transaction WHERE payment_intent_id = ?",
+                                    [paymentIntentId],
+                                    (err, anyPaymentResult) => {
+                                        if (err || anyPaymentResult.length === 0) {
+                                            return common.response(res, {
+                                                code: responseCode.OPERATION_FAILED,
+                                                message: "Payment not found or verification failed",
+                                                data: null,
+                                            })
+                                        }
+
+                                        const payment = anyPaymentResult[0]
+                                        if (payment.status === "pending") {
+                                            return common.response(res, {
+                                                code: responseCode.OPERATION_FAILED,
+                                                message: "Payment is still being processed. Please try again in a moment.",
+                                                data: null,
+                                            })
+                                        } else {
+                                            return common.response(res, {
+                                                code: responseCode.OPERATION_FAILED,
+                                                message: `Payment failed with status: ${payment.status}`,
+                                                data: null,
+                                            })
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    )
+                }
+
+                function createSubscription() {
+                    // Create subscription
+                    const subscriptionData = {
                         user_id,
                         plan_id,
-                        address: address || "",
-                        payment_method: payment_method || "cash",
-                        order_status: "pending",
-                        order_date: start_date,
-                        grand_total: plan.price,
+                        status: "active",
+                        start_date,
+                        end_date,
+                        payment_method,
                         is_active: 1,
                         is_deleted: 0,
-                    };
+                    }
 
-                    pool.query("insert into tbl_order set ?", orderData, (err, orderResult) => {
+                    pool.query("INSERT INTO tbl_user_subscription SET ?", subscriptionData, (err, subscriptionResult) => {
                         if (err) {
-                            console.error("Database Query Error:", err);
+                            console.error("Database Query Error:", err)
                             return common.response(res, {
                                 code: responseCode.OPERATION_FAILED,
                                 message: response_message.unsuccess,
                                 data: err.sqlMessage,
-                            });
+                            })
                         }
 
-                        const order_id = orderResult.insertId;
+                        // Send subscription confirmation email
+                        sendSubscriptionConfirmationEmail(subscriptionResult.insertId)
 
-                        return common.response(res, {
-                            code: responseCode.SUCCESS,
-                            message: response_message.subscription_created_successfully,
+                        const subscription_id = subscriptionResult.insertId
+
+                        // Create order
+                        const orderData = {
+                            user_id,
+                            plan_id,
+                            address: address || "",
+                            payment_method,
+                            order_status: payment_method === "card" ? "confirmed" : "pending",
+                            grand_total: plan.price,
+                            is_active: 1,
+                            is_deleted: 0,
+                        }
+
+                        pool.query("INSERT INTO tbl_order SET ?", orderData, (err, orderResult) => {
+                            if (err) {
+                                console.error("Database Query Error:", err)
+                                return common.response(res, {
+                                    code: responseCode.OPERATION_FAILED,
+                                    message: response_message.unsuccess,
+                                    data: err.sqlMessage,
+                                })
+                            }
+
+
+                            // Send order confirmation email
+                            sendOrderConfirmationEmail(orderResult.insertId)
+
+                            const order_id = orderResult.insertId
+
+                            // If payment was made with Stripe, update the payment transaction
+                            if (payment_intent_id && payment_method === "card") {
+                                pool.query(
+                                    "UPDATE tbl_payment_transaction SET subscription_id = ?, order_id = ? WHERE payment_intent_id = ?",
+                                    [subscription_id, order_id, payment_intent_id],
+                                    (err) => {
+                                        if (err) {
+                                            console.error("Database Query Error:", err)
+                                        }
+                                    }
+                                )
+                            }
+
+                            // Send confirmation email
+                            pool.query("SELECT * FROM tbl_user WHERE id = ?", [user_id], (err, userResult) => {
+                                if (!err && userResult.length > 0) {
+                                    const user = userResult[0]
+                                    const subject = "Subscription Confirmation - Your Subscription Box"
+                                    const message = templates.subscription_confirmation({
+                                        first_name: user.name.split(" ")[0],
+                                        subscription_id,
+                                        box_name: plan.box_name,
+                                        plan_name: plan.name,
+                                        amount: plan.price,
+                                        start_date: start_date.toLocaleDateString(),
+                                        end_date: end_date.toLocaleDateString(),
+                                    })
+                                    common.sendMail(subject, user.email, message)
+                                }
+                            })
+
+                            return common.response(res, {
+                                code: responseCode.SUCCESS,
+                                message: response_message.subscription_created_successfully,
+                                data: {
+                                    subscription_id,
+                                    order_id,
+                                    plan_name: plan.name,
+                                    box_name: plan.box_name,
+                                    start_date,
+                                    end_date,
+                                    price: plan.price,
+                                },
+                            })
+                        })
+                    })
+                }
+
+                // Send order confirmation email (callback style, not async/await)
+                function sendOrderConfirmationEmail(orderId) {
+                    const query = `
+            SELECT o.*, u.name as user_name, u.email as user_email, 
+                sp.name as plan_name, sp.price, sb.name as box_name
+            FROM tbl_order o
+            JOIN tbl_user u ON o.user_id = u.id
+            JOIN tbl_subscription_plans sp ON o.plan_id = sp.id
+            JOIN tbl_subscription_boxes sb ON sp.box_id = sb.id
+            WHERE o.id = ?
+        `;
+                    pool.query(query, [orderId], (error, orders) => {
+                        if (error) {
+                            console.error("Order Confirmation Email Query Error:", error);
+                            return;
+                        }
+                        if (!orders || orders.length === 0) {
+                            console.error("Order not found:", orderId);
+                            return;
+                        }
+                        const order = orders[0];
+                        const subject = "Order Confirmation - Your Subscription Box";
+                        const message = templates.order_confirmation({
+                            first_name: order.user_name ? order.user_name.split(" ")[0] : "",
+                            order_id: order.id,
+                            box_name: order.box_name,
+                            plan_name: order.plan_name,
+                            amount: order.grand_total,
+                            order_date: order.created_at ? new Date(order.created_at).toLocaleDateString() : "",
                         });
+                        common.sendMail(subject, order.user_email, message);
                     });
-                });
-            });
-        });
+                }
+
+                // Send subscription confirmation email (callback style, not async/await)
+                function sendSubscriptionConfirmationEmail(subscriptionId) {
+                    const query = `
+            SELECT us.*, u.name as user_name, u.email as user_email, 
+                sp.name as plan_name, sp.price, sb.name as box_name
+            FROM tbl_user_subscription us
+            JOIN tbl_user u ON us.user_id = u.id
+            JOIN tbl_subscription_plans sp ON us.plan_id = sp.id
+            JOIN tbl_subscription_boxes sb ON sp.box_id = sb.id
+            WHERE us.id = ?
+        `;
+                    pool.query(query, [subscriptionId], (error, subscriptions) => {
+                        if (error) {
+                            console.error("Subscription Confirmation Email Query Error:", error);
+                            return;
+                        }
+                        if (!subscriptions || subscriptions.length === 0) {
+                            console.error("Subscription not found:", subscriptionId);
+                            return;
+                        }
+                        const subscription = subscriptions[0];
+                        const subject = "Subscription Confirmation - Your Subscription Box";
+                        const message = templates.subscription_confirmation({
+                            first_name: subscription.user_name ? subscription.user_name.split(" ")[0] : "",
+                            subscription_id: subscription.id,
+                            box_name: subscription.box_name,
+                            plan_name: subscription.plan_name,
+                            amount: subscription.price,
+                            start_date: subscription.start_date ? new Date(subscription.start_date).toLocaleDateString() : "",
+                            end_date: subscription.end_date ? new Date(subscription.end_date).toLocaleDateString() : "",
+                        });
+                        common.sendMail(subject, subscription.user_email, message);
+                    });
+                }
+            })
+        })
     }
 
     getUserSubscriptions(req, res) {
@@ -701,6 +900,7 @@ class user_model {
         })
     }
 
+    // Cancel subscription
     cancelSubscription(req, res) {
         const user_id = req.user.id;
         const { id } = req.params;
@@ -713,9 +913,10 @@ class user_model {
             });
         }
 
+        // Verify subscription belongs to user
         const checkQuery = `
-            select * from tbl_user_subscription 
-            where id = ? and user_id = ? and is_deleted = 0
+            SELECT * FROM tbl_user_subscription 
+            WHERE id = ? AND user_id = ? AND is_deleted = 0
         `;
 
         pool.query(checkQuery, [id, user_id], (error, result) => {
@@ -736,13 +937,14 @@ class user_model {
                 });
             }
 
-            const updateQuery = `
-                update tbl_user_subscription 
-                set status = "cancelled", is_active = 0 
-                where id = ? and user_id = ? and is_deleted = 0
+            // Cancel the specific subscription
+            const updateSubscriptionQuery = `
+                UPDATE tbl_user_subscription 
+                SET status = "cancelled", is_active = 0 
+                WHERE id = ? AND user_id = ? AND is_deleted = 0
             `;
 
-            pool.query(updateQuery, [id, user_id], (updateError) => {
+            pool.query(updateSubscriptionQuery, [id, user_id], (updateError) => {
                 if (updateError) {
                     console.error("Database Query Error:", updateError);
                     return common.response(res, {
@@ -752,10 +954,29 @@ class user_model {
                     });
                 }
 
-                return common.response(res, {
-                    code: responseCode.SUCCESS,
-                    message: response_message.subscription_cancelled_successfully || "Subscription cancelled successfully",
-                    data: null,
+                // Cancel the associated order
+                const updateOrderQuery = `
+                    UPDATE tbl_order 
+                    SET order_status = "cancel", is_active = 0 
+                    WHERE user_id = ? AND plan_id = (
+                        SELECT plan_id FROM tbl_user_subscription WHERE id = ? AND user_id = ? AND is_deleted = 0
+                    ) AND is_deleted = 0
+                `;
+
+                pool.query(updateOrderQuery, [user_id, id, user_id], (orderError, result) => {
+                    if (orderError) {
+                        console.error("Database Query Error:", orderError);
+                        return common.response(res, {
+                            code: responseCode.OPERATION_FAILED,
+                            message: response_message.unsuccess,
+                            data: orderError.sqlMessage,
+                        });
+                    }
+                    return common.response(res, {
+                        code: responseCode.SUCCESS,
+                        message: response_message.subscription_cancelled_successfully || "Subscription and associated order cancelled successfully",
+                        data: null,
+                    });
                 });
             });
         });

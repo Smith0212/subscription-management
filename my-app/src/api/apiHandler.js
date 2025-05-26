@@ -49,7 +49,7 @@ export async function API(values, endpoint, method) {
 
   try {
     const res = await fetch(url, requestOptions)
-    console.log("Response status:", res)
+    console.log("Response status111111111:", res)
 
     if (!res.ok) {
       console.error(`HTTP error Status: ${res.status}`)
@@ -67,7 +67,6 @@ export async function API(values, endpoint, method) {
           console.error("Decryption error:", result.error)
           return { error: result.error, code: 0 }
         }
-
         return result
       } catch (error) {
         console.error("Decryption error:", error)

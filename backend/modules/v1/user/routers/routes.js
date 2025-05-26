@@ -1,6 +1,7 @@
-
+const express = require('express')
 const user = require("../controllers/user")
 const admin = require("../controllers/admin")
+const payment = require("../controllers/payment")
 
 const userRouter = (app) => {
   //auth
@@ -24,6 +25,11 @@ const userRouter = (app) => {
   app.get("/v1/order/user/orders", user.getUserOrders)
   app.get("/v1/order/details/:order_id", user.getOrderDetails)
 
+  // // Payment Routes
+  // app.post("/v1/payment/create-intent", payment.createPaymentIntent)
+  // app.post("/v1/payment/webhook", payment.handleWebhook)
+  // app.get("/v1/payment/history", payment.getPaymentHistory)
+
   //subscription crud
   app.post("/v1/admin/subscription/box/create", admin.createSubscriptionBox)
   app.post("/v1/admin/subscription/box/update", admin.updateSubscriptionBox)
@@ -34,12 +40,23 @@ const userRouter = (app) => {
   app.post("/v1/admin/subscription/plan/update", admin.updateSubscriptionPlan)
   app.post("/v1/admin/subscription/plan/delete", admin.deleteSubscriptionPlan)
 
+  // Admin Product Management Routes
+  app.post("/v1/admin/product/get", admin.getProductsByPlan)
+  app.post("/v1/admin/product/add", admin.addProductToPlan)
+  app.post("/v1/admin/product/update", admin.updateProduct)
+  app.post("/v1/admin/product/delete", admin.deleteProduct)
+
   //admin orders
   app.get("/v1/admin/orders", admin.getAllOrders)
   app.post("/v1/admin/order/update-status", admin.updateOrderStatus)
 
   //admin dashboard
   app.get("/v1/admin/dashboard", admin.getSubscriptionAnalytics)
+
+  // Payment routes
+  app.post("/v1/payment/create-intent", payment.createPaymentIntent)
+  app.post("/v1/payment/webhook", payment.handleWebhook)
+  app.get("/v1/payment/history", payment.getPaymentHistory)
 }
 
 module.exports = userRouter

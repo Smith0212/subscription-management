@@ -1,13 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Search, Filter } from "lucide-react"
 import { API } from "@/api/apiHandler"
 import SubscriptionBoxCard from "@/components/SubscriptionBoxCard"
 
 export default function HomePage() {
+  const router = useRouter()
+
   const [categories, setCategories] = useState([])
   const [subscriptionBoxes, setSubscriptionBoxes] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [filters, setFilters] = useState({
     search: "",
@@ -17,6 +21,15 @@ export default function HomePage() {
     frequency: "",
   })
   const [isOpen, setIsOpen] = useState(false)
+  
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      router.push("/login")
+      return
+    }
+    fetchCategories()
+  },[])
 
   useEffect(() => {
     getSubscriptionBoxes()
@@ -36,7 +49,7 @@ export default function HomePage() {
       const endpoint = `/v1/subscription/boxes`
 
       const response = await API(body, endpoint, "POST")
-      console.log("Response:", response)
+      console.log("Response11111111:", response)
 
       if (response.code == 1) {
         setSubscriptionBoxes(response.data || [])
@@ -50,10 +63,6 @@ export default function HomePage() {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    fetchCategories()
-  }, [])
 
   const fetchCategories = async () => {
     try {
@@ -94,13 +103,15 @@ export default function HomePage() {
     <div className="container mx-auto px-4 py-8">
       <section className="mb-12">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4">Subscription Boxes</h1>
+          <h1 className="text-4xl font-bold mb-4 text-gray-800">Subscription Boxes</h1>
+          <p className="text-gray-600">Discover the best subscription boxes tailored to your needs.</p>
         </div>
 
-        <div className="p-4 border rounded mb-8">
-          <div className="flex flex-col gap-2">
+        <div className="p-6 border rounded-lg shadow-md bg-gray-50 mb-8">
+          <div className="flex flex-col gap-4">
             <div className="relative">
-              <div className="absolute left-2 top-2">
+              <div className="absolute left-3 top-3 text-gray-400">
+                <Search className="h-5 w-5" />
               </div>
               <input
                 type="text"
@@ -108,22 +119,22 @@ export default function HomePage() {
                 value={filters.search}
                 onChange={handleChange}
                 placeholder="Search..."
-                className="pl-8 p-2 border rounded w-full"
+                className="pl-10 p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
 
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="p-2 border rounded w-full text-left"
+              className="p-3 border rounded-lg w-full text-left bg-blue-600 text-white hover:bg-blue-700 transition-colors"
             >
               {isOpen ? "Hide Filters" : "Show Filters"}
             </button>
           </div>
 
           {isOpen && (
-            <div className="mt-4 space-y-4">
+            <div className="mt-6 space-y-6">
               <div>
-                <label htmlFor="category" className="block text-sm mb-1">
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
                   Category
                 </label>
                 <select
@@ -131,7 +142,7 @@ export default function HomePage() {
                   name="category"
                   value={filters.category}
                   onChange={handleChange}
-                  className="p-2 border rounded w-full"
+                  className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 >
                   <option value="">All Categories</option>
                   {categories.map((category) => (
@@ -143,17 +154,17 @@ export default function HomePage() {
               </div>
 
               <div>
-                <label htmlFor="price" className="block text-sm mb-1">
+                <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
                   Price Range
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-4">
                   <input
                     type="number"
                     name="minPrice"
                     value={filters.minPrice}
                     onChange={handleChange}
                     placeholder="Min"
-                    className="p-2 border rounded w-1/2"
+                    className="p-3 border rounded-lg w-1/2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                   <input
                     type="number"
@@ -161,29 +172,15 @@ export default function HomePage() {
                     value={filters.maxPrice}
                     onChange={handleChange}
                     placeholder="Max"
-                    className="p-2 border rounded w-1/2"
+                    className="p-3 border rounded-lg w-1/2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* <div>
-                <label htmlFor="frequency" className="block text-sm mb-1">
-                  Number of Months
-                </label>
-                <input
-                  type="number"
-                  name="frequency"
-                  value={filters.frequency}
-                  onChange={handleChange}
-                  placeholder="Enter number of months"
-                  className="p-2 border rounded w-full"
-                />
-              </div> */}
-
               <div className="flex justify-end">
                 <button
                   onClick={handleReset}
-                  className="p-2 border rounded"
+                  className="p-3 border rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
                 >
                   Reset Filters
                 </button>
@@ -192,7 +189,11 @@ export default function HomePage() {
           )}
         </div>
 
-        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
 
         {loading ? (
           <div className="text-center py-12">

@@ -217,6 +217,161 @@ class admin_model {
     })
   }
 
+  getProductsByPlan(req, res) {
+    const plan_id = req.body.plan_id
+    console.log("plan_id", plan_id)
+    if (!plan_id) {
+      return common.response(res, {
+        code: responseCode.OPERATION_FAILED,
+        message: "plan_id is required",
+        data: null,
+      })
+    }
+
+    pool.query(
+      "SELECT * FROM tbl_product WHERE plan_id = ? AND is_deleted = 0",
+      [plan_id],
+      (error, products) => {
+        if (error) {
+          console.error("Database Query Error:", error)
+          return common.response(res, {
+            code: responseCode.OPERATION_FAILED,
+            message: response_message.unsuccess,
+            data: error.sqlMessage,
+          })
+        }
+
+        return common.response(res, {
+          code: responseCode.SUCCESS,
+          message: response_message.success,
+          data: products,
+        })
+      }
+    )
+  }
+
+  // Add product to plan
+  addProductToPlan(req, res) {
+    const { plan_id, type, name, description, image } = req.body
+
+    // Check if plan exists
+    pool.query("SELECT * FROM tbl_subscription_plans WHERE id = ? AND is_deleted = 0", [plan_id], (error, result) => {
+      if (error) {
+        console.error("Database Query Error:", error)
+        return common.response(res, {
+          code: responseCode.OPERATION_FAILED,
+          message: response_message.unsuccess,
+          data: error.sqlMessage,
+        })
+      }
+
+      if (result.length === 0) {
+        return common.response(res, {
+          code: responseCode.OPERATION_FAILED,
+          message: response_message.subscription_plan_not_found,
+          data: null,
+        })
+      }
+
+      const productData = {
+        plan_id,
+        type,
+        name,
+        description,
+        image,
+        is_active: 1,
+        is_deleted: 0,
+      }
+
+      pool.query("INSERT INTO tbl_product SET ?", productData, (err, productResult) => {
+        if (err) {
+          console.error("Database Query Error:", err)
+          return common.response(res, {
+            code: responseCode.OPERATION_FAILED,
+            message: response_message.unsuccess,
+            data: err.sqlMessage,
+          })
+        }
+
+        const product_id = productResult.insertId
+
+        return common.response(res, {
+          code: responseCode.SUCCESS,
+          message: response_message.product_added_successfully,
+          data: { product_id, ...productData },
+        })
+      })
+    })
+  }
+
+  // Update product
+  updateProduct(req, res) {
+    const { product_id, type, name, description, image, is_active } = req.body
+
+    const updateData = {}
+
+    if (type) updateData.type = type
+    if (name) updateData.name = name
+    if (description) updateData.description = description
+    if (image) updateData.image = image
+    if (is_active !== undefined) updateData.is_active = is_active
+
+    pool.query("UPDATE tbl_product SET ? WHERE id = ?", [updateData, product_id], (error, result) => {
+      if (error) {
+        console.error("Database Query Error:", error)
+        return common.response(res, {
+          code: responseCode.OPERATION_FAILED,
+          message: response_message.unsuccess,
+          data: error.sqlMessage,
+        })
+      }
+
+      if (result.affectedRows === 0) {
+        return common.response(res, {
+          code: responseCode.OPERATION_FAILED,
+          message: response_message.product_not_found,
+          data: null,
+        })
+      }
+
+      return common.response(res, {
+        code: responseCode.SUCCESS,
+        message: response_message.product_updated_successfully,
+        data: { product_id, ...updateData },
+      })
+    })
+  }
+
+  // Delete product
+  deleteProduct(req, res) {
+    const { product_id } = req.body
+
+    pool.query("UPDATE tbl_product SET is_deleted = 1 WHERE id = ?", [product_id], (error, result) => {
+      if (error) {
+        console.error("Database Query Error:", error)
+        return common.response(res, {
+          code: responseCode.OPERATION_FAILED,
+          message: response_message.unsuccess,
+          data: error.sqlMessage,
+        })
+      }
+
+      if (result.affectedRows === 0) {
+        return common.response(res, {
+          code: responseCode.OPERATION_FAILED,
+          message: response_message.product_not_found,
+          data: null,
+        })
+      }
+
+      return common.response(res, {
+        code: responseCode.SUCCESS,
+        message: response_message.product_deleted_successfully,
+        data: { product_id },
+      })
+    })
+  }
+
   getAllOrders(req, res) {
 
     let query = `

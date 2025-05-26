@@ -118,3 +118,39 @@ INSERT INTO tbl_products (name, description, price, image, category, stock) VALU
 ('Running Shoes', 'Lightweight running shoes with cushioned sole', 89.99, '/placeholder.jpg', 'Footwear', 45),
 ('Coffee Maker', 'Programmable coffee maker with thermal carafe', 79.99, '/placeholder.jpg', 'Home', 25),
 ('Backpack', 'Durable backpack with laptop compartment', 59.99, '/placeholder.jpg', 'Accessories', 60);
+
+
+
+
+-- Update payment_method enum in tbl_user_subscription
+ALTER TABLE tbl_user_subscription 
+MODIFY COLUMN payment_method ENUM('cash', 'card', 'stripe') NOT NULL;
+
+-- Update payment_method enum in tbl_order
+ALTER TABLE tbl_order 
+MODIFY COLUMN payment_method ENUM('cash', 'card', 'stripe') NOT NULL;
+
+-- Create payment transactions table
+CREATE TABLE tbl_payment_transaction (
+  id BIGINT(20) PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT(20) NOT NULL,
+  order_id BIGINT(20),
+  subscription_id BIGINT(20),
+  payment_intent_id VARCHAR(255),
+  payment_method_id VARCHAR(255),
+  amount DECIMAL(10, 2) NOT NULL,
+  currency VARCHAR(3) DEFAULT 'USD',
+  status ENUM('pending', 'succeeded', 'failed', 'refunded') NOT NULL,
+  error_message TEXT,
+  is_active BOOL DEFAULT 1,
+  is_deleted BOOL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES tbl_user(id) ON DELETE CASCADE,
+  FOREIGN KEY (order_id) REFERENCES tbl_order(id) ON DELETE SET NULL,
+  FOREIGN KEY (subscription_id) REFERENCES tbl_user_subscription(id) ON DELETE SET NULL
+);
+
+-- Add customer_id column to tbl_user for Stripe customer ID
+ALTER TABLE tbl_user
+ADD COLUMN stripe_customer_id VARCHAR(255) AFTER phone;

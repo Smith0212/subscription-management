@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Search, Filter } from "lucide-react"
 
 export default function SearchFilter({ onFilterChange }) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const [filters, setFilters] = useState({
     search: "",
     category: "",
@@ -33,35 +33,35 @@ export default function SearchFilter({ onFilterChange }) {
   }
 
   return (
-    <div className="p-4 border rounded">
-      <div className="flex flex-col gap-2">
-        <div className="relative">
-          <div className="absolute left-2 top-2">
-            <Search className="h-4 w-4" />
+    <div className="bg-white rounded-lg shadow-md p-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-center gap-4">
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
           </div>
           <input
             type="text"
             name="search"
             value={filters.search}
             onChange={handleChange}
-            placeholder="Search..."
-            className="pl-8 p-2 border rounded w-full"
+            placeholder="Search subscription boxes..."
+            className="pl-10 w-full p-2 border border-gray-300 rounded-md"
           />
         </div>
 
         <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-2 border rounded w-full text-left"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
         >
-          <Filter className="h-4 w-4 inline mr-2" />
-          {isOpen ? "Hide Filters" : "Show Filters"}
+          <Filter className="h-4 w-4 mr-2" />
+          {isExpanded ? "Hide Filters" : "Show Filters"}
         </button>
       </div>
 
-      {isOpen && (
-        <div className="mt-4 space-y-4">
+      {isExpanded && (
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label htmlFor="category" className="block text-sm mb-1">
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
               Category
             </label>
             <select
@@ -69,7 +69,7 @@ export default function SearchFilter({ onFilterChange }) {
               name="category"
               value={filters.category}
               onChange={handleChange}
-              className="p-2 border rounded w-full"
+              className="w-full p-2 border border-gray-300 rounded-md"
             >
               <option value="">All Categories</option>
               <option value="1">Food & Beverage</option>
@@ -80,17 +80,17 @@ export default function SearchFilter({ onFilterChange }) {
           </div>
 
           <div>
-            <label htmlFor="price" className="block text-sm mb-1">
+            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
               Price Range
             </label>
-            <div className="flex gap-2">
+            <div className="flex space-x-2">
               <input
                 type="number"
                 name="minPrice"
                 value={filters.minPrice}
                 onChange={handleChange}
                 placeholder="Min"
-                className="p-2 border rounded w-1/2"
+                className="w-1/2 p-2 border border-gray-300 rounded-md"
               />
               <input
                 type="number"
@@ -98,13 +98,13 @@ export default function SearchFilter({ onFilterChange }) {
                 value={filters.maxPrice}
                 onChange={handleChange}
                 placeholder="Max"
-                className="p-2 border rounded w-1/2"
+                className="w-1/2 p-2 border border-gray-300 rounded-md"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="frequency" className="block text-sm mb-1">
+            <label htmlFor="frequency" className="block text-sm font-medium text-gray-700 mb-1">
               Frequency
             </label>
             <select
@@ -112,7 +112,7 @@ export default function SearchFilter({ onFilterChange }) {
               name="frequency"
               value={filters.frequency}
               onChange={handleChange}
-              className="p-2 border rounded w-full"
+              className="w-full p-2 border border-gray-300 rounded-md"
             >
               <option value="">All Frequencies</option>
               <option value="monthly">Monthly</option>
@@ -120,10 +120,10 @@ export default function SearchFilter({ onFilterChange }) {
             </select>
           </div>
 
-          <div className="flex justify-end">
+          <div className="md:col-span-3 flex justify-end">
             <button
               onClick={handleReset}
-              className="p-2 border rounded"
+              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
             >
               Reset Filters
             </button>

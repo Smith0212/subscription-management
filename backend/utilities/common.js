@@ -1,6 +1,7 @@
 const httpStatus = require('http-status-codes')
 const database = require('../config/database');
 responseCode = require('./response_code');
+const nodemailer = require('nodemailer');
 const middleware = require('../middleware/validators');
 
 
@@ -37,6 +38,33 @@ class Utility {
         const re = /\S+@\S+\.\S+/;
         return re.test(email);
     }
+
+    sendMail = async (subject, to_email, message) => {
+        try {
+            const transporter = nodemailer.createTransport({
+                host: "smtp.gmail.com", 
+                port: 465, 
+                secure: true,
+                auth: {
+                    user: process.env.mailer_email,
+                    pass: process.env.mailer_password
+                }
+            });
+
+            const mailOptions = {
+                from: "example@gmail.com",
+                to: to_email,
+                subject: subject,
+                html: message
+            };
+
+            const info = await transporter.sendMail(mailOptions);
+            return info;
+        } catch (error) {
+            throw error;
+        }
+    };
+
 
     getUserDetail(user_id, callback) {
         const selectQuery = 'SELECT * FROM tbl_user WHERE id = ?';

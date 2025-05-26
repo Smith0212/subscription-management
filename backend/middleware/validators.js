@@ -13,7 +13,7 @@ var con = require('../config/database');
 var cryptoLib = require('cryptlib')
 var shaKey = cryptoLib.getHashSha256(process.env.KEY, 32)
 
-var bypassMethods = new Array("login", "signup");
+var bypassMethods = new Array("login", "signup", "webhook");
 
 const hash_key = crypto.createHash('sha256').update('xza548sa3vcr641b5ng5nhy9mlo64r6k').digest(); // 32 bytes
 const iv = Buffer.from('5ng5nhy9mlo64r6k'); // 16 bytes

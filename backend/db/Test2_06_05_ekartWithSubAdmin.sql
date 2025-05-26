@@ -6,6 +6,7 @@ create table tbl_user(
     name varchar(32),
     email varchar(64),
     password varchar(128),
+    stripe_customer_id VARCHAR(255),
     role enum('user', 'admin') default 'user',
     country_code varchar(6),
     phone varchar(16),
@@ -83,7 +84,7 @@ create table tbl_user_subscription (
     status enum('active', 'cancelled', 'paused') NOT NULL,
     start_date date NOT NULL,
     end_date date,
-    payment_method enum('cash'),
+    payment_method ENUM('cash', 'card', 'stripe') NOT NULL,
     is_active bool default 1,
     is_deleted bool default 0,
     created_at timestamp default current_timestamp,
@@ -111,7 +112,7 @@ create table tbl_order (
     user_id bigint(20),
     plan_id bigint(20), 
     address text,
-    payment_method enum('cash'),
+    payment_method ENUM('cash', 'card', 'stripe') NOT NULL
     order_status enum('pending', 'shipped', 'delivered'),
     grand_total int,
     order_date timestamp,
@@ -121,6 +122,27 @@ create table tbl_order (
     updated_at timestamp default current_timestamp on update current_timestamp,
     foreign key (user_id) references tbl_user(id) on delete cascade,
     foreign key (plan_id) references tbl_subscription_plans(id) on delete cascade
+);
+
+-- Create payment transactions table
+CREATE TABLE tbl_payment_transaction (
+  id BIGINT(20) PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT(20) NOT NULL,
+  order_id BIGINT(20),
+  subscription_id BIGINT(20),
+  payment_intent_id VARCHAR(255),
+  payment_method_id VARCHAR(255),
+  amount DECIMAL(10, 2) NOT NULL,
+  currency VARCHAR(3) DEFAULT 'USD',
+  status ENUM('pending', 'succeeded', 'failed', 'refunded') NOT NULL,
+  error_message TEXT,
+  is_active BOOL DEFAULT 1,
+  is_deleted BOOL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES tbl_user(id) ON DELETE CASCADE,
+  FOREIGN KEY (order_id) REFERENCES tbl_order(id) ON DELETE SET NULL,
+  FOREIGN KEY (subscription_id) REFERENCES tbl_user_subscription(id) ON DELETE SET NULL
 );
 
 
@@ -188,3 +210,5 @@ INSERT INTO tbl_order (user_id, plan_id, address, payment_method, order_status, 
 (3, 5, '789 Pine Rd, London, UK', 'cash', 'pending', 4999),
 (4, 2, '321 Elm St, Sydney, AU', 'cash', 'delivered', 7999),
 (5, 4, '654 Maple Dr, Mumbai, IN', 'cash', 'shipped', 10999);
+
+

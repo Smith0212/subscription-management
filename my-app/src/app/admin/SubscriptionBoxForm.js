@@ -17,11 +17,11 @@ export default function SubscriptionBoxForm({ initialData, onSubmit, onCancel })
   const fetchCategories = async () => {
     try {
       const response = await API({}, "/v1/subscription/getCategories", "GET")
-      if (response?.data) {
+      if (response && response.data) {
         setCategories(response.data)
       } else {
         setCategories([])
-        console.log("No categories found in the response")
+        console.warn("No categories found in the response")
       }
     } catch (error) {
       console.error("Error fetching categories:", error)

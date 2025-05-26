@@ -3,18 +3,29 @@ const express = require('express')
 require('dotenv').config();
 const app_routing = require('./modules/app_routing');
 const middleware = require('./middleware/validators');
+const bodyParser = require('body-parser');
 
 const app = express();
+
+app.post('/v1/payment/webhook', bodyParser.raw({ type: 'application/json' }),
+    (req, res, next) => {
+        console.log("wwwwwwwwwebhook received!");
+        // console.log("Headers:", JSON.stringify(req.headers));
+        // console.log("Signature:", req.headers['stripe-signature']);
+        next();
+    });
 
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
 
 const cors = require('cors');
+
+
 app.use(cors({
-    origin: 'http://localhost:3001', 
+    origin: 'http://localhost:3001',
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], 
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
 }));
 
 
@@ -22,9 +33,9 @@ app.use(cors({
 app.use(express.text());
 
 // extracting language from header
-app.use('/',middleware.extractHeaderLanguage);
+app.use('/', middleware.extractHeaderLanguage);
 // app.use('/',middleware.validateApiKey);
-app.use('/',middleware.validateHeaderToken);
+app.use('/', middleware.validateHeaderToken);
 
 app_routing.v1(app);
 
