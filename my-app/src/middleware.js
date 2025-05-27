@@ -33,8 +33,7 @@ export async function middleware(request) {
 
   if (
     userProtectedRoutes.some((route) => pathname.startsWith(route)) &&
-    role !== "user" &&
-    role !== "admin"
+    role !== "user"
   ) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
