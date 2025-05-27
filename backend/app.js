@@ -22,11 +22,7 @@ app.use(cookieParser());
 const cors = require('cors');
 
 
-app.use(cors({
-    origin: 'https://subscription-management-pw3f.onrender.com',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-}));
+app.use(cors());
 
 
 // app.use(express.json());
