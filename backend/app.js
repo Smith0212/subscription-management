@@ -24,12 +24,21 @@ const cors = require('cors');
 
 app.use(cors({
     origin: [
-        'https://subscription-management-q1kn.vercel.app', // your frontend production URL
-        'http://localhost:3001' // for local testing
+        'https://subscription-management-q1kn.vercel.app',
+        'http://localhost:3001'
     ],
+    credentials: true 
 }));
 
-app.options('*', cors());
+
+app.options('*', cors({
+    origin: [
+        'https://subscription-management-q1kn.vercel.app',
+        'http://localhost:3001'
+    ],
+    credentials: true
+}));
+
 
 
 
@@ -48,12 +57,3 @@ const port = process.env.port || 26450;
 app.listen(port, () => {
     console.log("Server running on port :", port);
 });
-
-// api documentation
-// https://documenter.getpostman.com/view/33413814/2sAYkDNgGf
-
-
-
-
-
-
