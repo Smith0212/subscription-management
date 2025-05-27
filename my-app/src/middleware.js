@@ -17,6 +17,8 @@ export async function middleware(request) {
     }
   }
 
+  console.log("Role from middlewareeeeeeee:", role);
+
   const userProtectedRoutes = ["/subscriptions", "/orders"];
   const adminProtectedRoutes = ["/admin"];
   const authRoutes = ["/login", "/signup", "/verifyOTP"];

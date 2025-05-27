@@ -171,7 +171,8 @@ class user_model {
                 // set token in a cookie
                 res.cookie('token', user_token, {
                     httpOnly: true,
-                    sameSite: 'strict',
+                    secure: true, 
+                    sameSite: 'none', 
                     maxAge: 24 * 60 * 60 * 1000, //1d
                 });
 
