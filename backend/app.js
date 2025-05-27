@@ -40,7 +40,7 @@ app.use('/', middleware.validateHeaderToken);
 app_routing.v1(app);
 
 
-const port = process.env.port || 3000;
+const port = process.env.port || 26450;
 app.listen(port, () => {
     console.log("Server running on port :", port);
 });

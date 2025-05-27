@@ -98,7 +98,7 @@ export default function ProductForm({ initialData, onSubmit, onCancel }) {
           >
             <option value="Food">Food</option>
             <option value="Cosmetic">Cosmetics</option>
-            <option value="service">Electronics</option>
+            <option value="Electronics">Electronics</option>
           </select>
         </div>
 

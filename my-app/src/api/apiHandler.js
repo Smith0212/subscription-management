@@ -3,7 +3,7 @@ import { decrypt, encrypt } from "./apiClient"
 
 export async function API(values, endpoint, method) {
 
-  const url = `http://localhost:3000${endpoint}`
+  const url = `https://subscription-management-pw3f.onrender.com${endpoint}`
   console.log("API Request", url)
 
   const myHeaders = new Headers({

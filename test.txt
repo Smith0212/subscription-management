@@ -2156,7 +2156,7 @@ stripe login
 3. Start listening for webhooks:
 
 ```shellscript
-stripe listen --forward-to http://localhost:3000/v1/webhook
+stripe listen --forward-to https://subscription-management-pw3f.onrender.com/v1/webhook
 ```
 
 
@@ -2179,7 +2179,7 @@ npm run dev
 ```
 
 
-3. Open your browser and navigate to `http://localhost:3000`
+3. Open your browser and navigate to `https://subscription-management-pw3f.onrender.com`
 4. Test the subscription flow with Stripe's test cards:
 
 1. Use `4242 4242 4242 4242` for successful payments
