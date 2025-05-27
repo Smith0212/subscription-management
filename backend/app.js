@@ -27,18 +27,11 @@ app.use(cors({
         'https://subscription-management-q1kn.vercel.app',
         'http://localhost:3001'
     ],
-    credentials: true 
+    credentials: true,
+    optionsSuccessStatus: 200,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 }));
-
-
-app.options('*', cors({
-    origin: [
-        'https://subscription-management-q1kn.vercel.app',
-        'http://localhost:3001'
-    ],
-    credentials: true
-}));
-
 
 
 
