@@ -172,7 +172,7 @@ class user_model {
                 res.cookie('token', user_token, {
                     httpOnly: false,
                     secure: true,
-                    sameSite: 'none',
+                    sameSite: 'strict',
                     maxAge: 24 * 60 * 60 * 1000, //1d
                 });
                 // Set CORS headers properly
