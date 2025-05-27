@@ -170,14 +170,11 @@ class user_model {
 
                 // set token in a cookie
                 res.cookie('token', user_token, {
-                    httpOnly: false,
-                    secure: true,
-                    sameSite: 'strict',
+                    httpOnly: true,
+                    secure: true, // ✅ Required on HTTPS (e.g., Vercel + Render)
+                    sameSite: 'strict', // ✅ Required for cross-site cookies
                     maxAge: 24 * 60 * 60 * 1000, //1d
                 });
-                // Set CORS headers properly
-                res.header('Access-Control-Allow-Credentials', 'true');
-                res.header('Access-Control-Allow-Origin', req.headers.origin || 'https://subscription-management-q1kn.vercel.app');
 
                 const device_data = {
                     user_id: user.id,
