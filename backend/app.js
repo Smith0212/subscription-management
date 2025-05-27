@@ -23,7 +23,7 @@ const cors = require('cors');
 
 
 app.use(cors({
-    origin: 'http://localhost:3001',
+    origin: 'https://subscription-management-pw3f.onrender.com',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
 }));
