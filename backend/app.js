@@ -22,11 +22,15 @@ app.use(cookieParser());
 const cors = require('cors');
 
 
-app.use(cors(
-    {
-        origin: '*'
-    }
-));
+app.use(cors({
+    origin: [
+        'https://subscription-management-q1kn.vercel.app', // your frontend production URL
+        'http://localhost:3001' // for local testing
+    ],
+}));
+
+app.options('*', cors());
+
 
 
 // app.use(express.json());
