@@ -171,11 +171,13 @@ class user_model {
                 // set token in a cookie
                 res.cookie('token', user_token, {
                     httpOnly: true,
-                    secure: true, 
+                    secure: true,
                     sameSite: 'none',
-                    domain: 'onrender.com', 
+                    domain: 'onrender.com',
                     maxAge: 24 * 60 * 60 * 1000, //1d
                 });
+                res.header('Access-Control-Allow-Credentials', 'true');
+                res.header('Access-Control-Allow-Origin', 'https://subscription-management-q1kn.vercel.app');
 
                 const device_data = {
                     user_id: user.id,
