@@ -1,20 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { CheckCircle, XCircle } from "lucide-react"
 import Link from "next/link"
 
-export default function PaymentResult() {
-  const router = useRouter()
+function PaymentResultContent() {
   const searchParams = useSearchParams()
   const [status, setStatus] = useState("processing")
   const [message, setMessage] = useState("")
 
   useEffect(() => {
-    // Get payment_intent and payment_intent_client_secret from URL
-    const paymentIntent = searchParams.get("payment_intent")
-    const paymentIntentClientSecret = searchParams.get("payment_intent_client_secret")
+    // Get redirect_status from URL
     const redirectStatus = searchParams.get("redirect_status")
 
     if (redirectStatus === "succeeded") {
@@ -74,5 +71,13 @@ export default function PaymentResult() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentResult() {
+  return (
+    <Suspense>
+      <PaymentResultContent />
+    </Suspense>
   )
 }
