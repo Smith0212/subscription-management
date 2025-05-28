@@ -721,7 +721,7 @@ class user_model {
                             plan_id,
                             address: address || "",
                             payment_method,
-                            order_status: payment_method === "card" ? "confirmed" : "pending",
+                            order_status: "pending",
                             grand_total: plan.price,
                             is_active: 1,
                             is_deleted: 0,

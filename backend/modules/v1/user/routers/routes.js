@@ -55,7 +55,7 @@ const userRouter = (app) => {
 
   // Payment routes
   app.post("/v1/payment/create-intent", payment.createPaymentIntent)
-  // app.post("/v1/payment/webhook", payment.handleWebhook)
+  app.post("/v1/payment/webhook", payment.handleWebhook)
   app.get("/v1/payment/history", payment.getPaymentHistory)
 }
 

@@ -11,6 +11,7 @@ export async function middleware(request) {
   if (userToken) {
     try {
       const decodedToken = jwtDecode(userToken);
+      console.log("Decoded Token from middleware:", decodedToken);
       role = decodedToken.role;
     } catch (error) {
       console.error("Invalid token:", error);
