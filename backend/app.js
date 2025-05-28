@@ -4,16 +4,12 @@ require('dotenv').config();
 const app_routing = require('./modules/app_routing');
 const middleware = require('./middleware/validators');
 const bodyParser = require('body-parser');
+const payment = require("./modules/v1/user/controllers/payment");
+
 
 const app = express();
 
-app.post('/v1/payment/webhook', bodyParser.raw({ type: 'application/json' }),
-    (req, res, next) => {
-        console.log("wwwwwwwwwebhook received!");
-        // console.log("Headers:", JSON.stringify(req.headers));
-        // console.log("Signature:", req.headers['stripe-signature']);
-        next();
-    });
+app.post('/v1/payment/webhook', bodyParser.raw({ type: 'application/json' }), payment.handleWebhook);
 
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
@@ -47,3 +43,5 @@ const port = process.env.port || 26450;
 app.listen(port, () => {
     console.log("Server running on port :", port);
 });
+
+// STRIPE_WEBHOOK_SECRET=whsec_f5318a29c1701e6da01c9a508e8aeddd8dd7a27c81b26f11259540f1424119fc

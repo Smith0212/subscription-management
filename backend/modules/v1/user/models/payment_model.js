@@ -126,7 +126,7 @@ class payment_model {
     // console.log("Received Webhook Signature:", signature)
     try {
       const event = stripeConfig.verifyWebhookSignature(req, signature)
-      console.log("eventtttt :", event.type)
+      console.log("eventttttWWWWWW :", event.type)
 
       // Handle the event based on its type
       switch (event.type) {
@@ -159,13 +159,13 @@ class payment_model {
         .query("UPDATE tbl_payment_transaction SET status = 'succeeded' WHERE payment_intent_id = ?", [
           paymentIntent.id,
         ])
-
+        console.log("1111111111111111")
       // Get transaction details
       const [transactions] = await pool
         .promise()
         .query("SELECT * FROM tbl_payment_transaction WHERE payment_intent_id = ?", [paymentIntent.id])
 
-      console.log("transactionssssssss :", transactions)
+      console.log("transactionsssssssswwwwwwwww :", transactions)
 
 
       if (transactions.length === 0) {
