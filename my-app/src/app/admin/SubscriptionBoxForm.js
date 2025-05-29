@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useFormik } from "formik"
 import * as Yup from "yup"
-import {API} from "@/api/apiHandler"
+import { API } from "@/api/apiHandler"
 
 export default function SubscriptionBoxForm({ initialData, onSubmit, onCancel }) {
   const [categories, setCategories] = useState([])
@@ -71,9 +71,8 @@ export default function SubscriptionBoxForm({ initialData, onSubmit, onCancel })
             value={formik.values.name}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
-            className={`w-full p-2 border rounded-md ${
-              formik.touched.name && formik.errors.name ? "border-red-500" : "border-gray-300"
-            }`}
+            className={`w-full p-2 border rounded-md ${formik.touched.name && formik.errors.name ? "border-red-500" : "border-gray-300"
+              }`}
           />
           {formik.touched.name && formik.errors.name && (
             <p className="text-red-500 text-sm mt-1">{formik.errors.name}</p>
@@ -91,9 +90,8 @@ export default function SubscriptionBoxForm({ initialData, onSubmit, onCancel })
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
             rows={4}
-            className={`w-full p-2 border rounded-md ${
-              formik.touched.description && formik.errors.description ? "border-red-500" : "border-gray-300"
-            }`}
+            className={`w-full p-2 border rounded-md ${formik.touched.description && formik.errors.description ? "border-red-500" : "border-gray-300"
+              }`}
           />
           {formik.touched.description && formik.errors.description && (
             <p className="text-red-500 text-sm mt-1">{formik.errors.description}</p>
@@ -110,9 +108,8 @@ export default function SubscriptionBoxForm({ initialData, onSubmit, onCancel })
             value={formik.values.category_id}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
-            className={`w-full p-2 border rounded-md ${
-              formik.touched.category_id && formik.errors.category_id ? "border-red-500" : "border-gray-300"
-            }`}
+            className={`w-full p-2 border rounded-md ${formik.touched.category_id && formik.errors.category_id ? "border-red-500" : "border-gray-300"
+              }`}
           >
             <option value="">Select a category</option>
             {categories.map((category) => (
@@ -132,7 +129,7 @@ export default function SubscriptionBoxForm({ initialData, onSubmit, onCancel })
             id="is_active"
             name="is_active"
             checked={formik.values.is_active}
-            onChange={formik.handleChange}
+            onChange={(e) => formik.setFieldValue("is_active", e.target.checked)}
             className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
           />
           <label htmlFor="is_active" className="ml-2 block text-sm text-gray-700">
@@ -152,14 +149,13 @@ export default function SubscriptionBoxForm({ initialData, onSubmit, onCancel })
         <button
           type="submit"
           disabled={loading}
-          className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${
-            loading ? "opacity-70 cursor-not-allowed" : ""
-          }`}
+          className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${loading ? "opacity-70 cursor-not-allowed" : ""
+            }`}
         >
           {loading ? "Saving..." : initialData ? "Update Box" : "Create Box"}
         </button>
       </div>
-      
+
     </form>
   )
 }

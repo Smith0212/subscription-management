@@ -72,6 +72,9 @@ class user_model {
                         });
                     }
 
+                    // Send welcome email to user
+                    sendWelcomeEmail(user_id);
+
                     return common.response(res, {
                         code: responseCode.SUCCESS,
                         message: [response_message.success, response_message.otp_has_sent_successfully],
@@ -80,6 +83,24 @@ class user_model {
                 });
             });
         });
+
+        // Send welcome email function
+        function sendWelcomeEmail(userId) {
+            // Use the data already available in the signup scope
+            const user = {
+            id: userId,
+            name: data.name,
+            email: data.email,
+            };
+            const subject = "Welcome to Your Subscription Box!";
+            const message = templates.welcome
+            ? templates.welcome_email({
+                first_name: user.name ? user.name.split(" ")[0] : "",
+                email: user.email,
+            })
+            : `Hi ${user.name ? user.name.split(" ")[0] : ""},\n\nWelcome to our platform! We're excited to have you on board.`;
+            common.sendMail(subject, user.email, message);
+        }
     }
 
     verifyOTP(req, res) {
@@ -95,7 +116,7 @@ class user_model {
             });
         }
 
-        const selectQuery = 'select * from tbl_otp where user_id = ? and otp = ? and action = "signup"';
+        const selectQuery = "select * from tbl_otp where user_id = ? and otp = ? and action = 'signup'";
         pool.query(selectQuery, [user_id, otp], (err, result) => {
             if (err) {
                 console.error("Database Query Error:", err);
@@ -105,16 +126,18 @@ class user_model {
                     data: err.sqlMessage,
                 });
             }
-            // console.log("Query Result:", result, otp);
-            // console.log("Query Result:", result[0].otp, otp);
-            if (result[0].otp == otp) {
+            if (result && result.length > 0 && result[0].otp == otp) {
+                // Send OTP email to user
+                // If user/email/otp already available, pass them to avoid extra queries
+                const otpRow = result[0];
+                sendOtpEmail(user_id, req.user.name, req.user.email, otpRow.otp);
+
                 return common.response(res, {
                     code: responseCode.SUCCESS,
                     message: req.language.otp_verified_successfully || "OTP verified successfully",
                     data: { user_id },
                 });
-            }
-            else {
+            } else {
                 return common.response(res, {
                     code: responseCode.OPERATION_FAILED,
                     message: req.language.invalid_otp || "Invalid OTP",
@@ -123,7 +146,53 @@ class user_model {
             }
         });
 
-
+        // Send OTP email function
+        function sendOtpEmail(userId, name, email, otpValue) {
+            // If all data is available, use it directly
+            if (name && email && otpValue) {
+                const subject = "Your OTP Code";
+                const message = templates.otp_email
+                    ? templates.otp_email({
+                        first_name: name ? name.split(" ")[0] : "",
+                        otp: otpValue,
+                    })
+                    : `Hi ${name ? name.split(" ")[0] : ""},\n\nYour OTP code is: ${otpValue}`;
+                common.sendMail(subject, email, message);
+                return;
+            }
+            // Otherwise, fetch missing data
+            const userQuery = "select name, email from tbl_user where id = ?";
+            pool.query(userQuery, [userId], (err, users) => {
+                if (err || !users || users.length === 0) return;
+                const user = users[0];
+                if (otpValue) {
+                    // If OTP is already available
+                    const subject = "Your OTP Code";
+                    const message = templates.otp_email
+                        ? templates.OTP({
+                            first_name: user.name ? user.name.split(" ")[0] : "",
+                            otp: otpValue,
+                        })
+                        : `Hi ${user.name ? user.name.split(" ")[0] : ""},\n\nYour OTP code is: ${otpValue}`;
+                    common.sendMail(subject, user.email, message);
+                } else {
+                    // Fetch OTP if not available
+                    const otpQuery = "select otp from tbl_otp where user_id = ? and action = 'signup' order by id desc limit 1";
+                    pool.query(otpQuery, [userId], (err, otps) => {
+                        if (err || !otps || otps.length === 0) return;
+                        const otpVal = otps[0].otp;
+                        const subject = "Your OTP Code";
+                        const message = templates.otp_email
+                            ? templates.OTP({
+                                first_name: user.name ? user.name.split(" ")[0] : "",
+                                otp: otpVal,
+                            })
+                            : `Hi ${user.name ? user.name.split(" ")[0] : ""},\n\nYour OTP code is: ${otpVal}`;
+                        common.sendMail(subject, user.email, message);
+                    });
+                }
+            });
+        }
     }
 
     // login user
@@ -791,7 +860,7 @@ class user_model {
                     })
                 }
 
-                // Send order confirmation email (callback style, not async/await)
+                // Send order confirmation email 
                 function sendOrderConfirmationEmail(orderId) {
                     const query = `
             SELECT o.*, u.name as user_name, u.email as user_email, 
@@ -825,7 +894,7 @@ class user_model {
                     });
                 }
 
-                // Send subscription confirmation email (callback style, not async/await)
+                // Send subscription confirmation email
                 function sendSubscriptionConfirmationEmail(subscriptionId) {
                     const query = `
             SELECT us.*, u.name as user_name, u.email as user_email, 
@@ -941,7 +1010,7 @@ class user_model {
             // Cancel the specific subscription
             const updateSubscriptionQuery = `
                 UPDATE tbl_user_subscription 
-                SET status = "cancelled", is_active = 0 
+                SET status = 'cancelled', is_active = 0 
                 WHERE id = ? AND user_id = ? AND is_deleted = 0
             `;
 

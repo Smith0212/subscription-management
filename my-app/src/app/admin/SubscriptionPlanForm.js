@@ -117,7 +117,7 @@ export default function SubscriptionPlanForm({ initialData, onSubmit, onCancel }
             id="is_active"
             name="is_active"
             checked={formik.values.is_active}
-            onChange={formik.handleChange}
+            onChange={(e) => formik.setFieldValue("is_active", e.target.checked)}
             onBlur={formik.handleBlur}
             className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
           />
@@ -138,9 +138,8 @@ export default function SubscriptionPlanForm({ initialData, onSubmit, onCancel }
         <button
           type="submit"
           disabled={formik.isSubmitting}
-          className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${
-            formik.isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-          }`}
+          className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${formik.isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+            }`}
         >
           {formik.isSubmitting ? "Saving..." : initialData ? "Update Plan" : "Create Plan"}
         </button>

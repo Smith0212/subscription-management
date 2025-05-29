@@ -11,13 +11,15 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
+  const isVerifyOtpPage = typeof window !== "undefined" && window.location.pathname === "/verifyOTP"
+
   return (
     <html lang="en">
-      <body className={inter.className} suppressHydrationWarning >
+      <body className={inter.className} suppressHydrationWarning>
         <div className="flex flex-col min-h-screen">
-          <Navbar />
+          {!isVerifyOtpPage && <Navbar />}
           <main className="flex-grow bg-gray-50">{children}</main>
-          <Footer />
+          {!isVerifyOtpPage && <Footer />}
         </div>
       </body>
     </html>

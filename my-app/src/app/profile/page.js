@@ -165,7 +165,7 @@ export default function ProfilePage() {
 
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="mt-4">
-              <button onClick={() => router.push("/products")} className="ml-4 text-blue-600 hover:underline">
+              <button onClick={() => router.push("/")} className="ml-4 text-blue-600 hover:underline">
                 Back to home
               </button>
             </div>
