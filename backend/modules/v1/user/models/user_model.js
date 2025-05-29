@@ -376,15 +376,16 @@ class user_model {
     }
 
     getAllSubBoxes(req, res) {
-        const { search, category, min_price, max_price, frequency } = req.body
+        const { search, category, min_price, max_price } = req.body
         console.log("body model:", req.body)
+        // If admin is logged in, remove is_active condition
         let query = `
-                select sb.*, c.name as category_name, 
-                min(sp.price) as min_price, max(sp.price) as max_price
-                from tbl_subscription_boxes sb
-                left join tbl_category c on sb.category_id = c.id
-                left join tbl_subscription_plans sp on sb.id = sp.box_id
-                where sb.is_deleted = 0
+            select sb.*, c.name as category_name, 
+            min(sp.price) as min_price, max(sp.price) as max_price
+            from tbl_subscription_boxes sb
+            left join tbl_category c on sb.category_id = c.id
+            left join tbl_subscription_plans sp on sb.id = sp.box_id
+            where sb.is_deleted = 0${req.user && req.user.role === 'admin' ? '' : ' and sb.is_active = 1'}
             `
 
         const queryParams = []
@@ -436,7 +437,7 @@ class user_model {
 
             const plansQuery = `
                     select * from tbl_subscription_plans 
-                    where box_id in (?) and is_deleted = 0 and is_active = 1
+                    where box_id in (?) and is_deleted = 0${req.user && req.user.role === 'admin' ? '' : ' and sb.is_active = 1'}
                 `
 
             pool.query(plansQuery, [boxIds], (err, plans) => {
