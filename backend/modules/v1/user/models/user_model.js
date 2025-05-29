@@ -384,7 +384,7 @@ class user_model {
                 from tbl_subscription_boxes sb
                 left join tbl_category c on sb.category_id = c.id
                 left join tbl_subscription_plans sp on sb.id = sp.box_id
-                where sb.is_deleted = 0 and sb.is_active = 1
+                where sb.is_deleted = 0
             `
 
         const queryParams = []
