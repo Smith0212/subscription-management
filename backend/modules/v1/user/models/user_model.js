@@ -73,7 +73,7 @@ class user_model {
                     }
 
                     // Send welcome email to user
-                    sendWelcomeEmail(user_id);
+                    // sendWelcomeEmail(user_id);
                     sendOtpEmail(user_id);
 
                     return common.response(res, {
@@ -86,19 +86,19 @@ class user_model {
         });
 
         // Send welcome email function
-        function sendWelcomeEmail(userId) {
-            // Use the data already available in the signup scope
-            const user = {
-            id: userId,
-            name: data.name,
-            email: data.email,
-            };
-            const subject = "Welcome to Subscription Management system"
-            const message = templates.welcome_email({
-            first_name: user.name ? user.name.split(" ")[0] : "",
-            });
-            common.sendMail(subject, user.email, message);
-        }
+        // function sendWelcomeEmail(userId) {
+        //     // Use the data already available in the signup scope
+        //     const user = {
+        //     id: userId,
+        //     name: data.name,
+        //     email: data.email,
+        //     };
+        //     const subject = "Welcome to Subscription Management system"
+        //     const message = templates.welcome_email({
+        //     first_name: user.name ? user.name.split(" ")[0] : "",
+        //     });
+        //     common.sendMail(subject, user.email, message);
+        // }
 
         // Send OTP email function
         function sendOtpEmail(userId) {
