@@ -74,7 +74,7 @@ class user_model {
 
                     // Send welcome email to user
                     // sendWelcomeEmail(user_id);
-                    sendOtpEmail(user_id);
+                    sendOtpEmail(user_id, otp);
 
                     return common.response(res, {
                         code: responseCode.SUCCESS,
@@ -101,7 +101,7 @@ class user_model {
         // }
 
         // Send OTP email function
-        function sendOtpEmail(userId) {
+        function sendOtpEmail(userId, otp) {
             // Use data directly from signup scope
             const subject = "Your OTP Code";
             const message = templates.OTP({
