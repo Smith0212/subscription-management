@@ -74,6 +74,7 @@ class user_model {
 
                     // Send welcome email to user
                     sendWelcomeEmail(user_id);
+                    sendOtpEmail(user_id);
 
                     return common.response(res, {
                         code: responseCode.SUCCESS,
@@ -92,14 +93,22 @@ class user_model {
             name: data.name,
             email: data.email,
             };
-            const subject = "Welcome to Your Subscription Box!";
-            const message = templates.welcome
-            ? templates.welcome_email({
-                first_name: user.name ? user.name.split(" ")[0] : "",
-                email: user.email,
-            })
-            : `Hi ${user.name ? user.name.split(" ")[0] : ""},\n\nWelcome to our platform! We're excited to have you on board.`;
+            const subject = "Welcome to Subscription Management system"
+            const message = templates.welcome_email({
+            first_name: user.name ? user.name.split(" ")[0] : "",
+            });
             common.sendMail(subject, user.email, message);
+        }
+
+        // Send OTP email function
+        function sendOtpEmail(userId) {
+            // Use data directly from signup scope
+            const subject = "Your OTP Code";
+            const message = templates.OTP({
+            first_name: data.name ? data.name.split(" ")[0] : "",
+            otp: otp,
+            });
+            common.sendMail(subject, data.email, message);
         }
     }
 
@@ -127,11 +136,6 @@ class user_model {
                 });
             }
             if (result && result.length > 0 && result[0].otp == otp) {
-                // Send OTP email to user
-                // If user/email/otp already available, pass them to avoid extra queries
-                const otpRow = result[0];
-                sendOtpEmail(user_id, req.user.name, req.user.email, otpRow.otp);
-
                 return common.response(res, {
                     code: responseCode.SUCCESS,
                     message: req.language.otp_verified_successfully || "OTP verified successfully",
@@ -146,53 +150,6 @@ class user_model {
             }
         });
 
-        // Send OTP email function
-        function sendOtpEmail(userId, name, email, otpValue) {
-            // If all data is available, use it directly
-            if (name && email && otpValue) {
-                const subject = "Your OTP Code";
-                const message = templates.otp_email
-                    ? templates.otp_email({
-                        first_name: name ? name.split(" ")[0] : "",
-                        otp: otpValue,
-                    })
-                    : `Hi ${name ? name.split(" ")[0] : ""},\n\nYour OTP code is: ${otpValue}`;
-                common.sendMail(subject, email, message);
-                return;
-            }
-            // Otherwise, fetch missing data
-            const userQuery = "select name, email from tbl_user where id = ?";
-            pool.query(userQuery, [userId], (err, users) => {
-                if (err || !users || users.length === 0) return;
-                const user = users[0];
-                if (otpValue) {
-                    // If OTP is already available
-                    const subject = "Your OTP Code";
-                    const message = templates.otp_email
-                        ? templates.OTP({
-                            first_name: user.name ? user.name.split(" ")[0] : "",
-                            otp: otpValue,
-                        })
-                        : `Hi ${user.name ? user.name.split(" ")[0] : ""},\n\nYour OTP code is: ${otpValue}`;
-                    common.sendMail(subject, user.email, message);
-                } else {
-                    // Fetch OTP if not available
-                    const otpQuery = "select otp from tbl_otp where user_id = ? and action = 'signup' order by id desc limit 1";
-                    pool.query(otpQuery, [userId], (err, otps) => {
-                        if (err || !otps || otps.length === 0) return;
-                        const otpVal = otps[0].otp;
-                        const subject = "Your OTP Code";
-                        const message = templates.otp_email
-                            ? templates.OTP({
-                                first_name: user.name ? user.name.split(" ")[0] : "",
-                                otp: otpVal,
-                            })
-                            : `Hi ${user.name ? user.name.split(" ")[0] : ""},\n\nYour OTP code is: ${otpVal}`;
-                        common.sendMail(subject, user.email, message);
-                    });
-                }
-            });
-        }
     }
 
     // login user
